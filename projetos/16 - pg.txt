@@ -1,0 +1,258 @@
+CREATE DATABASE cadastro;
+
+CREATE TABLE pessoa (
+  codigo SERIAL NOT NULL,
+  nome VARCHAR(100) NOT NULL,
+  nascimento DATE NOT NULL,
+  genero CHAR(1) NOT NULL,
+  PRIMARY KEY (codigo)
+);
+
+INSERT INTO pessoa (nome, nascimento, genero) VALUES ('fulano', '2000-12-31', 'M') RETURNING *;
+
+SELECT * FROM pessoa;
+SELECT * FROM pessoa WHERE codigo = 1;
+
+UPDATE pessoa SET nome = 'beltrano', nascimento = '2000-07-31', genero = 'M' WHERE codigo = 1 RETURNING *;
+
+DELETE FROM pessoa WHERE codigo = 1 RETURNING *;
+
+----------
+
+# /api.yaml
+
+openapi: 3.0.2
+info:
+    title: API
+    version: 1.0.0
+paths:
+    /:
+        get:
+            responses:
+                '200':
+                    content:
+                        application/json:
+                            schema:
+                                type: array
+                                items:
+                                    $ref: '#/components/schemas/pessoa2'
+                    description: Ok
+        post:
+            requestBody:
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/pessoa1'
+                required: true
+            responses:
+                '201':
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/pessoa2'
+                    description: Created
+    '/{codigo}':
+        parameters:
+            -
+                name: codigo
+                schema:
+                    type: integer
+                in: path
+                required: true
+        get:
+            responses:
+                '200':
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/pessoa2'
+                    description: Ok
+        put:
+            requestBody:
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/pessoa1'
+                required: true
+            responses:
+                '200':
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/pessoa2'
+                    description: Ok
+        delete:
+            responses:
+                '204':
+                    description: No Content
+components:
+    schemas:
+        pessoa1:
+            required:
+                - nome
+                - nascimento
+                - genero
+            type: object
+            properties:
+                nome:
+                    type: string
+                nascimento:
+                    format: date
+                    type: string
+                genero:
+                    enum:
+                        - M
+                        - F
+                    type: string
+            example:
+                nome: fulano
+                nascimento: '2000-12-31'
+                genero: M
+        pessoa2:
+            type: object
+            properties:
+                codigo:
+                    type: integer
+                nome:
+                    type: string
+                nascimento:
+                    format: date
+                    type: string
+                genero:
+                    type: string
+            example:
+                codigo: 1
+                nome: fulano
+                nascimento: '2000-12-31'
+                genero: M
+
+----------
+
+cd projeto
+npm install pg
+
+----------
+
+# /.env
+
+EXPRESS_PORT=8080
+
+DB_HOST=localhost
+DB_PORT=5432
+DB_DATABASE=cadastro
+DB_USER=postgres
+DB_PASSWORD=postgres
+
+----------
+
+// /server.js
+
+require('dotenv').config();
+const express = require('express');
+const validator = require('express-openapi-validator');
+const db = require('pg');
+
+const server = express();
+const port = process.env.EXPRESS_PORT;
+const pool = new db.Pool({
+	host: process.env.DB_HOST,
+	port: process.env.DB_PORT,
+	database: process.env.DB_DATABASE,
+	user: process.env.DB_USER,
+	password: process.env.DB_PASSWORD
+});
+
+server.use(express.json());
+
+server.use(validator.middleware({ apiSpec: 'api.yaml', validateRequests: true, validateResponses: false }));
+
+server.get('/', async (request, response) => {
+	try {
+		const result = await pool.query('SELECT * FROM pessoa');
+		console.log(result);
+		response.status(200).json(result.rows);
+	} catch (error) {
+		console.log(error.stack);
+		response.status(500).json(error.message);
+	}
+});
+
+server.post('/', async (request, response) => {
+	try {
+		const result = await pool.query('INSERT INTO pessoa (nome, nascimento, genero) VALUES ($1, $2, $3) RETURNING *', [ request.body.nome, request.body.nascimento, request.body.genero ]);
+		console.log(result);
+		response.status(201).json(result.rows[0]);
+	} catch (error) {
+		console.log(error.stack);
+		response.status(500).json(error.message);
+	}
+});
+
+server.get('/:codigo', async (request, response) => {
+	try {
+		const result = await pool.query('SELECT * FROM pessoa WHERE codigo = $1', [ request.params.codigo ]);
+		console.log(result);
+		if (result.rows.length == 0) {
+			response.status(404).json();
+			return;
+		}
+		response.status(200).json(result.rows[0]);
+	} catch (error) {
+		console.log(error.stack);
+		response.status(500).json(error.message);
+	}
+});
+
+server.put('/:codigo', async (request, response) => {
+	try {
+		const result = await pool.query('UPDATE pessoa SET nome = $1, nascimento = $2, genero = $3 WHERE codigo = $4 RETURNING *', [ request.body.nome, request.body.nascimento, request.body.genero, request.params.codigo ]);
+		console.log(result);
+		if (result.rows.length == 0) {
+			response.status(404).json();
+			return;
+		}
+		response.status(200).json(result.rows[0]);
+	} catch (error) {
+		console.log(error.stack);
+		response.status(500).json(error.message);
+	}
+});
+
+server.delete('/:codigo', async (request, response) => {
+	try {
+		const result = await pool.query('DELETE FROM pessoa WHERE codigo = $1 RETURNING *', [ request.params.codigo ]);
+		console.log(result);
+		if (result.rows.length == 0) {
+			response.status(404).json();
+			return;
+		}
+		response.status(204).json();
+	} catch (error) {
+		console.log(error.stack);
+		response.status(500).json(error.message);
+	}
+});
+
+server.use((error, request, response, next) => {
+	console.log(error.stack);
+	response.status(error.status || 500).json(error.message);
+});
+
+server.listen(port, () => {
+	console.log(`Server listening at http://localhost:${port}`);
+});
+
+----------
+
+GET http://localhost:8080 200 Ok
+GET http://localhost:8080/1 200 Ok
+GET http://localhost:8080/999 404 Not Found
+POST http://localhost:8080 201 Created
+{ "nome": "sicrano", "nascimento": "2000-06-30", "genero": "M" }
+PUT http://localhost:8080/1 200 Ok
+{ "nome": "sicrano", "nascimento": "2000-06-30", "genero": "M" }
+PUT http://localhost:8080/999 404 Not Found
+{ "nome": "sicrano", "nascimento": "2000-06-30", "genero": "M" }
+DELETE http://localhost:8080/1 204 No Content
+DELETE http://localhost:8080/999 404 Not Found
+

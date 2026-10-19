@@ -1,0 +1,140 @@
+https://www.jwt.io/
+
+----------
+
+# /api.yaml
+
+openapi: 3.0.2
+info:
+    title: API
+    version: 1.0.0
+paths:
+    /autenticacao:
+        post:
+            requestBody:
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/autenticacao'
+                required: true
+            responses:
+                '200':
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/token'
+                    description: Ok
+    /:
+        get:
+            parameters:
+                -
+                    name: Authorization
+                    description: 'Bearer {token}'
+                    schema:
+                        type: string
+                    in: header
+                    required: true
+            responses:
+                '200':
+                    content:
+                        application/json:
+                            schema:
+                                type: string
+                    description: Ok
+components:
+    schemas:
+        autenticacao:
+            required:
+                - usuario
+                - senha
+            type: object
+            properties:
+                usuario:
+                    type: string
+                senha:
+                    type: string
+            example:
+                usuario: fulano
+                senha: 12345
+        token:
+            type: object
+            properties:
+                token:
+                    type: string
+            example:
+                token: ABC.DEF.XYZ
+
+----------
+
+cd projeto
+npm install jsonwebtoken
+
+----------
+
+# /.env
+
+EXPRESS_PORT=8080
+
+JWT_SECRET=minha-chave-secreta
+
+----------
+
+// /server.js
+
+require('dotenv').config();
+const express = require('express');
+const validator = require('express-openapi-validator');
+const jwt = require('jsonwebtoken');
+
+const server = express();
+const port = process.env.EXPRESS_PORT;
+
+server.use(express.json());
+
+server.use(validator.middleware({ apiSpec: 'api.yaml', validateRequests: true, validateResponses: false }));
+
+server.post('/autenticacao', (request, response) => {
+	const token = jwt.sign({ sub: request.body.usuario, role: 2 }, process.env.JWT_SECRET, { expiresIn: '1m' });
+	console.log(token);
+	response.status(200).json({ token: token });
+});
+
+server.get('/', (request, response) => {
+	let token = request.headers.authorization;
+	try {
+		if (token.startsWith('Bearer ')) {
+			token = token.replace('Bearer ', '');
+		} else {
+			token = '';
+		}
+		const payload = jwt.verify(token, process.env.JWT_SECRET);
+		console.log(payload);
+		response.status(200).json('resposta');
+	} catch (error) {
+		console.log(error.stack);
+		response.status(401).json(error.message);
+	}
+});
+
+server.use((error, request, response, next) => {
+	console.log(error.stack);
+	response.status(error.status || 500).json(error.message);
+});
+
+server.listen(port, () => {
+	console.log(`Server listening at http://localhost:${port}`);
+});
+
+----------
+
+POST http://localhost:8080/autenticacao 200 Ok
+{ "usuario": "fulano", "senha": "12345" }
+GET http://localhost:8080 200 Ok
+Authorization: Bearer ...
+
+401 Unauthorized
+	token não enviado
+	token inválido
+	token alterado
+	token expirado
+

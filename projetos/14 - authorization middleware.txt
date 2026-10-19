@@ -1,0 +1,201 @@
+# /api.yaml
+
+openapi: 3.0.2
+info:
+    title: API
+    version: 1.0.0
+paths:
+    /autenticacao:
+        post:
+            requestBody:
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/autenticacao'
+                required: true
+            responses:
+                '200':
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/token'
+                    description: Ok
+    /publico:
+        get:
+            responses:
+                '200':
+                    content:
+                        application/json:
+                            schema:
+                                type: string
+                    description: Ok
+    /privado:
+        get:
+            responses:
+                '200':
+                    content:
+                        application/json:
+                            schema:
+                                type: string
+                    description: Ok
+            security:
+                -
+                    bearer: []
+    /privado/administracao:
+        get:
+            responses:
+                '200':
+                    content:
+                        application/json:
+                            schema:
+                                type: string
+                    description: Ok
+            security:
+                -
+                    bearer: []
+components:
+    schemas:
+        autenticacao:
+            required:
+                - usuario
+                - senha
+            type: object
+            properties:
+                usuario:
+                    type: string
+                senha:
+                    type: string
+            example:
+                usuario: fulano
+                senha: 12345
+        token:
+            type: object
+            properties:
+                token:
+                    type: string
+            example:
+                token: ABC.DEF.XYZ
+    securitySchemes:
+        bearer:
+            scheme: bearer
+            bearerFormat: JWT
+            type: http
+
+----------
+
+# /.env
+
+EXPRESS_PORT=8080
+
+JWT_SECRET=minha-chave-secreta
+
+----------
+
+// /server.js
+
+require('dotenv').config();
+const express = require('express');
+const validator = require('express-openapi-validator');
+const jwt = require('jsonwebtoken');
+
+const server = express();
+const port = process.env.EXPRESS_PORT;
+
+const rolesMiddleware = (roles) => (request, response, next) => {
+	if (!roles.includes(request.jwtpayload.role)) {
+		response.status(403).json();
+		return;
+	}
+	next();
+};
+
+server.use(express.json());
+
+server.use(
+	validator.middleware({
+		apiSpec: 'api.yaml',
+		validateRequests: true,
+		validateResponses: false,
+		validateSecurity: {
+			handlers: {
+				bearer: (request, scopes, schema) => {
+					request.jwtpayload = jwt.verify(request.headers.authorization.replace('Bearer ', ''), process.env.JWT_SECRET);
+					return(true);
+				}
+			}
+		}
+	})
+);
+
+server.post('/autenticacao', (request, response) => {
+	let role = 0;
+	if (request.body.usuario == 'fulano') {
+		role = 1;
+	}
+	if (request.body.usuario == 'beltrano') {
+		role = 2;
+	}
+	const token = jwt.sign({ sub: request.body.usuario, role: role }, process.env.JWT_SECRET, { expiresIn: '1m' });
+	console.log(token);
+	response.status(200).json({ token: token });
+});
+
+server.get('/publico', (request, response) => {
+	response.status(200).json('resposta');
+});
+
+server.get('/privado', (request, response) => {
+	response.status(200).json('resposta');
+});
+
+//server.get('/privado/administracao', (request, response) => {
+//	if (![ 2, 5 ].includes(request.jwtpayload.role)) {
+//	{	response.status(403).json();
+//		return;
+//	}
+//	response.status(200).json('resposta');
+//});
+
+server.get('/privado/administracao', rolesMiddleware([ 2, 5 ]), (request, response) => {
+	response.status(200).json('resposta');
+});
+
+server.use((error, request, response, next) => {
+	console.log(error.stack);
+	response.status(error.status || 500).json(error.message);
+});
+
+server.listen(port, () => {
+	console.log(`Server listening at http://localhost:${port}`);
+});
+
+----------
+
+GET http://localhost:8080/publico 200 Ok
+
+POST http://localhost:8080/autenticacao 200 Ok
+{ "usuario": "fulano", "senha": "12345" }
+GET http://localhost:8080/privado 200 Ok
+Authorization: Bearer ...
+GET http://localhost:8080/privado/administracao 403 Forbidden
+Authorization: Bearer ...
+
+401 Unauthorized
+	token não enviado
+	token inválido
+	token alterado
+	token expirado
+
+POST http://localhost:8080/autenticacao 200 Ok
+{ "usuario": "beltrano", "senha": "12345" }
+GET http://localhost:8080/privado 200 Ok
+Authorization: Bearer ...
+GET http://localhost:8080/privado/administracao 200 Ok
+Authorization: Bearer ...
+
+401 Unauthorized
+	token não enviado
+	token inválido
+	token alterado
+	token expirado
+

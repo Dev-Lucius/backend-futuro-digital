@@ -1,0 +1,95 @@
+openapi: 3.0.2
+info:
+  title: API de Transferencias Bancarias
+  version: 1.0.0
+  description: >
+    API que demonstra transacoes ACID no PostgreSQL.
+    Uma transferencia exige duas operacoes (debito e credito) que
+    devem acontecer juntas ou nao acontecerem — garantido pelo
+    BEGIN / COMMIT / ROLLBACK.
+
+paths:
+  # ==========================================
+  # UNICO ENDPOINT: POST /
+  # ==========================================
+  # Nao usamos GET, PUT ou DELETE aqui porque uma transferencia
+  # bancaria eh uma OPERACAO, nao um recurso simples.
+  # Ela cria um "registro de operacao", mas o efeito principal
+  # eh alterar duas linhas no banco (origem e destino).
+  # ==========================================
+  /:
+    post:
+      summary: Realiza uma transferencia entre contas correntes
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/transferencia1'
+      responses:
+        '201':
+          description: Transferencia realizada com sucesso
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/transferencia2'
+        '404':
+          description: Conta origem ou destino nao encontrada
+        '409':
+          description: Saldo insuficiente na conta de origem
+        '500':
+          description: Erro no banco de dados
+
+components:
+  schemas:
+    # ==========================================
+    # SCHEMA DE ENTRADA (o que o cliente envia)
+    # ==========================================
+    transferencia1:
+      type: object
+      required:
+        - origem
+        - destino
+        - valor
+      properties:
+        origem:
+          type: integer
+          description: Codigo da conta que vai enviar o dinheiro
+          example: 1
+        destino:
+          type: integer
+          description: Codigo da conta que vai receber o dinheiro
+          example: 2
+        valor:
+          type: number
+          minimum: 0.01
+          description: Quanto vai transferir (deve ser maior que zero)
+          example: 10
+      example:
+        origem: 1
+        destino: 2
+        valor: 10
+
+    # ==========================================
+    # SCHEMA DE SAIDA (o que o servidor devolve)
+    # ==========================================
+    transferencia2:
+      type: object
+      properties:
+        operacao:
+          type: integer
+          description: Numero ficticio da operacao (em um sistema real, seria gerado pelo banco)
+          example: 123
+        origem:
+          type: integer
+          example: 1
+        destino:
+          type: integer
+          example: 2
+        valor:
+          type: number
+          example: 10
+        autorizacao:
+          type: string
+          description: Codigo de autorizacao ficticio da transferencia
+          example: AB.CD.EF.12.34

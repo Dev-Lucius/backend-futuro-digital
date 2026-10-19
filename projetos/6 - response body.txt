@@ -1,0 +1,108 @@
+openapi: 3.0.2
+info:
+    title: API
+    version: 1.0.0
+paths:
+    /:
+        get:
+            responses:
+                '200':
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/pessoa'
+                    description: Ok
+components:
+    schemas:
+        pessoa:
+            type: object
+            properties:
+                nome:
+                    type: string
+                nascimento:
+                    format: date
+                    type: string
+                genero:
+                    type: string
+            example:
+                nome: fulano
+                nascimento: '2000-12-31'
+                genero: M
+
+----------
+
+// /server.js
+
+const express = require('express');
+
+const server = express();
+const port = 8080;
+
+server.get('/', (request, response) => {
+	response.status(200).json({ nome: 'fulano', nascimento: '2000-12-31', genero: 'M' });
+});
+
+server.listen(port, () => {
+	console.log(`Server listening at http://localhost:${port}`);
+});
+
+----------
+
+GET http://localhost:8080 200 Ok
+
+----------
+
+openapi: 3.0.2
+info:
+    title: API
+    version: 1.0.0
+paths:
+    /:
+        get:
+            responses:
+                '200':
+                    content:
+                        application/json:
+                            schema:
+                                type: array
+                                items:
+                                    $ref: '#/components/schemas/pessoa'
+                    description: Ok
+components:
+    schemas:
+        pessoa:
+            type: object
+            properties:
+                nome:
+                    type: string
+                nascimento:
+                    format: date
+                    type: string
+                genero:
+                    type: string
+            example:
+                nome: fulano
+                nascimento: '2000-12-31'
+                genero: M
+
+----------
+
+// /server.js
+
+const express = require('express');
+
+const server = express();
+const port = 8080;
+
+server.get('/', (request, response) => {
+	response.status(200).json([ { nome: 'fulano', nascimento: '2000-12-31', genero: 'M' }, { nome: 'beltrano', nascimento: '2000-12-31', genero: 'M' } ]);
+});
+
+server.listen(port, () => {
+	console.log(`Server listening at http://localhost:${port}`);
+});
+
+----------
+
+GET http://localhost:8080 200 Ok
+

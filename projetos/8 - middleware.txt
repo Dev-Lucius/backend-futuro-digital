@@ -1,0 +1,49 @@
+openapi: 3.0.2
+info:
+    title: API
+    version: 1.0.0
+paths:
+    /:
+        get:
+            responses:
+                '200':
+                    content:
+                        application/json:
+                            schema:
+                                type: string
+                    description: Ok
+
+----------
+
+// /server.js
+
+const express = require('express');
+
+const server = express();
+const port = 8080;
+
+server.use((request, response, next) => {
+	console.log('midleware 1');
+	console.log(new Date().toISOString());
+	console.log(request);
+	next();
+});
+
+server.use((request, response, next) => {
+	console.log('midleware 2');
+	console.log(new Date().toISOString());
+	next();
+});
+
+server.get('/', (request, response) => {
+	response.status(200).json('resposta');
+});
+
+server.listen(port, () => {
+	console.log(`Server listening at http://localhost:${port}`);
+});
+
+----------
+
+GET http://localhost:8080 200 Ok
+

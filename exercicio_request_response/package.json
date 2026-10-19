@@ -1,0 +1,16 @@
+{
+  "name": "produto-api-completa",
+  "version": "1.0.0",
+  "description": "API de produtos com filtros, autenticação e cadastro em lote",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "node --watch server.js"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "express": "^5.2.1"
+  }
+}

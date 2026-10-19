@@ -1,0 +1,185 @@
+https://jsonplaceholder.typicode.com/
+https://jsonplaceholder.typicode.com/guide/
+
+----------
+
+# /api.yaml
+
+openapi: 3.0.2
+info:
+    title: API
+    version: 1.0.0
+paths:
+    /get:
+        get:
+            responses:
+                '200':
+                    content:
+                        application/json:
+                            schema:
+                                type: string
+                    description: Ok
+    /post:
+        get:
+            responses:
+                '200':
+                    content:
+                        application/json:
+                            schema:
+                                type: string
+                    description: Ok
+    /put:
+        get:
+            responses:
+                '200':
+                    content:
+                        application/json:
+                            schema:
+                                type: string
+                    description: Ok
+    /delete:
+        get:
+            responses:
+                '200':
+                    content:
+                        application/json:
+                            schema:
+                                type: string
+                    description: Ok
+
+----------
+
+# /.env
+
+EXPRESS_PORT=8080
+
+----------
+
+// /server.js
+
+require('dotenv').config();
+const express = require('express');
+const validator = require('express-openapi-validator');
+
+const server = express();
+const port = process.env.EXPRESS_PORT;
+const url = 'https://jsonplaceholder.typicode.com/posts';
+
+server.use(express.json());
+
+server.use(validator.middleware({ apiSpec: 'api.yaml', validateRequests: true, validateResponses: false }));
+
+server.get('/get', async (request, response) => {
+	try {
+		const page = 1;
+		const limit = 5;
+		const fetch_response = await fetch(`${url}?_page=${page}&_limit=${limit}`, {
+			method: 'GET',
+			headers: {
+				'Accept': 'application/json'
+			}
+		});
+		if (!fetch_response.ok) {
+			response.status(500).json(fetch_response.status);
+			return;
+		}
+		const data = await fetch_response.json();
+		console.log(data);
+		response.status(200).json('resposta');
+	} catch (error) {
+		console.log(error.stack);
+		response.status(500).json(error.message);
+	}
+});
+
+server.get('/post', async (request, response) => {
+	try {
+		const fetch_response = await fetch(url, {
+			method: 'POST',
+			headers: {
+				'Content-Type': 'application/json',
+				'Accept': 'application/json'
+			},
+			body: JSON.stringify({
+				userId: 1,
+				title: 'titulo',
+				body: 'conteudo'
+			})
+		});
+		if (!fetch_response.ok) {
+			response.status(500).json(fetch_response.status);
+			return;
+		}
+		const data = await fetch_response.json();
+		console.log(data);
+		response.status(200).json('resposta');
+	} catch (error) {
+		console.log(error.stack);
+		response.status(500).json(error.message);
+	}
+});
+
+server.get('/put', async (request, response) => {
+	try {
+		const id = 1;
+		const fetch_response = await fetch(`${url}/${id}`, {
+			method: 'PUT',
+			headers: {
+				'Content-Type': 'application/json',
+				'Accept': 'application/json'
+			},
+			body: JSON.stringify({
+				id: id,
+				userId: 1,
+				title: 'titulo',
+				body: 'conteudo'
+			})
+		});
+		if (!fetch_response.ok) {
+			response.status(500).json(fetch_response.status);
+			return;
+		}
+		const data = await fetch_response.json();
+		console.log(data);
+		response.status(200).json('resposta');
+	} catch (error) {
+		console.log(error.stack);
+		response.status(500).json(error.message);
+	}
+});
+
+server.get('/delete', async (request, response) => {
+	try {
+		const id = 1;
+		const fetch_response = await fetch(`${url}/${id}`, {
+			method: 'DELETE'
+		});
+		if (!fetch_response.ok) {
+			response.status(500).json(fetch_response.status);
+			return;
+		}
+		const data = await fetch_response.json();
+		console.log(data);
+		response.status(200).json('resposta');
+	} catch (error) {
+		console.log(error.stack);
+		response.status(500).json(error.message);
+	}
+});
+
+server.use((error, request, response, next) => {
+	console.log(error.stack);
+	response.status(error.status || 500).json(error.message);
+});
+
+server.listen(port, () => {
+	console.log(`Server listening at http://localhost:${port}`);
+});
+
+----------
+
+GET http://localhost:8080/get 200 Ok
+GET http://localhost:8080/post 200 Ok
+GET http://localhost:8080/put 200 Ok
+GET http://localhost:8080/delete 200 Ok
+

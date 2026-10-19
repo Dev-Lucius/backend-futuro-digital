@@ -1,0 +1,67 @@
+# /api.yaml
+
+openapi: 3.0.2
+info:
+    title: API
+    version: 1.0.0
+paths:
+    /:
+        get:
+            responses:
+                '200':
+                    content:
+                        application/json:
+                            schema:
+                                type: string
+                    description: Ok
+
+----------
+
+cd projeto
+npm install dotenv
+
+----------
+
+# /.env
+
+EXPRESS_PORT=8080
+
+VARIAVEL_1=VALOR 1
+VARIAVEL_2=VALOR 2
+VARIAVEL_3=VALOR 3
+
+----------
+
+// /server.js
+
+require('dotenv').config();
+const express = require('express');
+const validator = require('express-openapi-validator');
+
+const server = express();
+const port = process.env.EXPRESS_PORT;
+
+server.use(express.json());
+
+server.use(validator.middleware({ apiSpec: 'api.yaml', validateRequests: true, validateResponses: false }));
+
+server.get('/', (request, response) => {
+	console.log(process.env.VARIAVEL_1);
+	console.log(process.env.VARIAVEL_2);
+	console.log(process.env.VARIAVEL_3);
+	response.status(200).json('resposta');
+});
+
+server.use((error, request, response, next) => {
+	console.log(error.stack);
+	response.status(error.status || 500).json(error.message);
+});
+
+server.listen(port, () => {
+	console.log(`Server listening at http://localhost:${port}`);
+});
+
+----------
+
+GET http://localhost:8080 200 Ok
+

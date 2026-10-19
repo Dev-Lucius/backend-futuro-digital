@@ -1,0 +1,147 @@
+# /api.yaml
+
+openapi: 3.0.2
+info:
+    title: API
+    version: 1.0.0
+paths:
+    '/{codigo}':
+        parameters:
+            -
+                name: codigo
+                schema:
+                    type: integer
+                in: path
+                required: true
+        put:
+            parameters:
+                -
+                    name: query1
+                    schema:
+                        type: string
+                    in: query
+                    required: true
+                -
+                    name: query2
+                    schema:
+                        type: integer
+                    in: query
+                    required: false
+                -
+                    name: header1
+                    schema:
+                        type: string
+                    in: header
+                    required: true
+                -
+                    name: header2
+                    schema:
+                        type: integer
+                    in: header
+                    required: false
+            requestBody:
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/pessoa1'
+                required: true
+            responses:
+                '200':
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/pessoa2'
+                    description: Ok
+components:
+    schemas:
+        pessoa1:
+            required:
+                - nome
+                - nascimento
+                - genero
+            type: object
+            properties:
+                nome:
+                    type: string
+                nascimento:
+                    format: date
+                    type: string
+                genero:
+                    enum:
+                        - M
+                        - F
+                    type: string
+            example:
+                nome: fulano
+                nascimento: '2000-12-31'
+                genero: M
+        pessoa2:
+            type: object
+            properties:
+                codigo:
+                    type: integer
+                nome:
+                    type: string
+                nascimento:
+                    format: date
+                    type: string
+                genero:
+                    type: string
+            example:
+                codigo: 1
+                nome: fulano
+                nascimento: '2000-12-31'
+                genero: M
+
+----------
+
+cd projeto
+npm install express-openapi-validator
+
+----------
+
+// /server.js
+
+const express = require('express');
+const validator = require('express-openapi-validator');
+
+const server = express();
+const port = 8080;
+
+server.use(express.json());
+
+server.use(validator.middleware({ apiSpec: 'api.yaml', validateRequests: true, validateResponses: false }));
+
+server.put('/:codigo', (request, response) => {
+	response.status(200).json({ codigo: request.params.codigo, nome: request.body.nome, nascimento: request.body.nascimento, genero: request.body.genero });
+});
+
+server.use((error, request, response, next) => {
+	console.log(error.stack);
+	response.status(error.status || 500).json(error.message);
+});
+
+server.listen(port, () => {
+	console.log(`Server listening at http://localhost:${port}`);
+});
+
+----------
+
+PUT http://localhost:8080/123?query1=111 200 Ok
+header1=111
+{ "nome": "fulano", "nascimento": "2000-12-31", "genero": "M" }
+PUT http://localhost:8080/123?query1=111&query2=222 200 Ok
+header1=111, header2=222
+{ "nome": "fulano", "nascimento": "2000-12-31", "genero": "M" }
+
+400 Bad Request
+	não enviar codigo
+	codigo texto
+	não enviar query1
+	query2 texto
+	não enviar header1
+	header2 texto
+	não enviar nome, nascimento e genero
+	nascimento inválido
+	genero inválido
+

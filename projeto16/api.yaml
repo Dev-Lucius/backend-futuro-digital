@@ -1,0 +1,122 @@
+openapi: 3.0.2
+info:
+  title: API de Pessoas com PostgreSQL
+  version: 1.0.0
+  description: >
+    API REST completa conectada a um banco PostgreSQL.
+    Demonstra CRUD persistente: os dados sobrevivem ao
+    reinicio do servidor.
+
+paths:
+  # ========================================
+  # LISTAR E CRIAR (Raiz da API)
+  # ========================================
+  /:
+    get:
+      summary: Lista todas as pessoas do banco
+      responses:
+        '200':
+          description: Array com todas as pessoas
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/pessoa2'
+    post:
+      summary: Cadastra uma nova pessoa no banco
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/pessoa1'
+      responses:
+        '201':
+          description: Pessoa criada (com codigo gerado pelo banco)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/pessoa2'
+
+  # ========================================
+  # BUSCAR, ATUALIZAR E DELETAR (por ID)
+  # ========================================
+  /{codigo}:
+    parameters:
+      - name: codigo
+        in: path
+        required: true
+        schema:
+          type: integer
+        description: ID da pessoa (chave primaria no PostgreSQL)
+    get:
+      summary: Busca uma pessoa pelo codigo
+      responses:
+        '200':
+          description: Pessoa encontrada
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/pessoa2'
+        '404':
+          description: Pessoa nao encontrada no banco
+    put:
+      summary: Atualiza uma pessoa existente
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/pessoa1'
+      responses:
+        '200':
+          description: Pessoa atualizada
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/pessoa2'
+        '404':
+          description: Pessoa nao encontrada
+    delete:
+      summary: Remove uma pessoa do banco
+      responses:
+        '204':
+          description: Removida com sucesso (sem body)
+        '404':
+          description: Pessoa nao encontrada
+
+components:
+  schemas:
+    # Schema de ENTRADA (POST/PUT) — sem 'codigo', pois o banco gera
+    pessoa1:
+      type: object
+      required: [nome, nascimento, genero]
+      properties:
+        nome:
+          type: string
+          example: fulano
+        nascimento:
+          type: string
+          format: date
+          example: '2000-12-31'
+        genero:
+          type: string
+          enum: [M, F]
+          example: M
+
+    # Schema de SAIDA (GET) — com 'codigo' gerado pelo SERIAL
+    pessoa2:
+      type: object
+      properties:
+        codigo:
+          type: integer
+          description: ID gerado automaticamente pelo PostgreSQL
+          example: 1
+        nome:
+          type: string
+        nascimento:
+          type: string
+          format: date
+        genero:
+          type: string

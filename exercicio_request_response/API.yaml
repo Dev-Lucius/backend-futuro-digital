@@ -1,0 +1,159 @@
+openapi: 3.0.2
+info:
+    title: API de Produtos
+    version: 1.0.0
+    description: API completa de produtos com autenticação, filtros e cadastro em lote
+
+paths:
+    /produto:
+        get:
+            summary: Lista produtos com filtros opcionais
+            parameters:
+                - name: chaveacesso
+                  in: header
+                  required: true
+                  schema:
+                      type: string
+                - name: tipo
+                  in: query
+                  required: false
+                  schema:
+                      type: string
+                - name: cor
+                  in: query
+                  required: false
+                  schema:
+                      type: string
+                - name: minpreco
+                  in: query
+                  required: false
+                  schema:
+                      type: number
+                - name: maxpreco
+                  in: query
+                  required: false
+                  schema:
+                      type: number
+            responses:
+                '200':
+                    description: Lista de produtos filtrada
+                    content:
+                        application/json:
+                            schema:
+                                type: array
+                                items:
+                                    $ref: '#/components/schemas/Produto'
+                '401':
+                    description: Acesso Negado
+                '400':
+                    description: Parâmetro de query inválido
+
+        post:
+            summary: Cadastra múltiplos produtos
+            parameters:
+                - name: chaveacesso
+                  in: header
+                  required: true
+                  schema:
+                      type: string
+            requestBody:
+                required: true
+                content:
+                    application/json:
+                        schema:
+                            type: array
+                            items:
+                                $ref: '#/components/schemas/Produto'
+            responses:
+                '201':
+                    description: Produtos criados com sucesso
+                    content:
+                        application/json:
+                            schema:
+                                type: array
+                                items:
+                                    $ref: '#/components/schemas/Produto'
+                '400':
+                    description: Dados inválidos no body
+                '401':
+                    description: Acesso Negado
+
+    /produto/{codigo}:
+        get:
+            summary: Busca produto específico pelo código
+            parameters:
+                - name: chaveacesso
+                  in: header
+                  required: true
+                  schema:
+                      type: string
+                - name: codigo
+                  in: path
+                  required: true
+                  schema:
+                      type: integer
+            responses:
+                '200':
+                    description: Produto encontrado
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/Produto'
+                '400':
+                    description: Código inválido
+                '401':
+                    description: Acesso Negado
+                '404':
+                    description: Produto não encontrado
+
+components:
+    schemas:
+        Produto:
+            type: object
+            required:
+                - descricao
+                - preco
+                - altura
+                - largura
+                - profundidade
+                - peso
+                - cor
+                - validade
+                - estoque
+            properties:
+                id:
+                    type: integer
+                    readOnly: true
+                descricao:
+                    type: string
+                preco:
+                    type: number
+                altura:
+                    type: number
+                largura:
+                    type: number
+                profundidade:
+                    type: number
+                peso:
+                    type: number
+                cor:
+                    type: string
+                    enum:
+                        - branco
+                        - preto
+                        - cinza
+                validade:
+                    type: string
+                    format: date
+                estoque:
+                    type: integer
+            example:
+                descricao: "Mesa de escritório"
+                preco: 999.99
+                altura: 75.0
+                largura: 120.0
+                profundidade: 60.0
+                peso: 15.5
+                cor: branco
+                validade: "2026-12-31"
+                estoque: 10

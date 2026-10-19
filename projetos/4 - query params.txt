@@ -1,0 +1,59 @@
+openapi: 3.0.2
+info:
+    title: API
+    version: 1.0.0
+paths:
+    /:
+        get:
+            parameters:
+                -
+                    name: parametro1
+                    schema:
+                        type: string
+                    in: query
+                    required: true
+                -
+                    name: parametro2
+                    schema:
+                        type: integer
+                    in: query
+                    required: false
+            responses:
+                '200':
+                    content:
+                        application/json:
+                            schema:
+                                type: string
+                    description: Ok
+
+----------
+
+// /server.js
+
+const express = require('express');
+
+const server = express();
+const port = 8080;
+
+server.get('/', (request, response) => {
+	console.log(request.query);
+	response.status(200).json(`resposta ${request.query.parametro1} ${request.query.parametro2}`);
+});
+
+server.listen(port, () => {
+	console.log(`Server listening at http://localhost:${port}`);
+});
+
+----------
+
+GET http://localhost:8080 200 Ok
+GET http://localhost:8080?parametro1=111 200 Ok
+GET http://localhost:8080?parametro1=abc+def%20xyz 200 Ok
+GET http://localhost:8080?parametro2=222 200 Ok
+GET http://localhost:8080?parametro2=abc+def%20xyz 200 Ok
+GET http://localhost:8080?parametro1=111&parametro2=222 200 Ok
+GET http://localhost:8080?parametro3=333 200 Ok
+GET http://localhost:8080?parametro1=111&parametro3=333 200 Ok
+GET http://localhost:8080?parametro2=222&parametro3=333 200 Ok
+GET http://localhost:8080?parametro1=111&parametro2=222&parametro3=333 200 Ok
+

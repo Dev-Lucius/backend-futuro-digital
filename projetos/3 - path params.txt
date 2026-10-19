@@ -1,0 +1,60 @@
+openapi: 3.0.2
+info:
+    title: API
+    version: 1.0.0
+paths:
+    /:
+        get:
+            responses:
+                '200':
+                    content:
+                        application/json:
+                            schema:
+                                type: string
+                    description: Ok
+    '/{codigo}':
+        parameters:
+            -
+                name: codigo
+                schema:
+                    type: integer
+                in: path
+                required: true
+        get:
+            responses:
+                '200':
+                    content:
+                        application/json:
+                            schema:
+                                type: string
+                    description: Ok
+
+----------
+
+// /server.js
+
+const express = require('express');
+
+const server = express();
+const port = 8080;
+
+server.get('/', (request, response) => {
+	console.log(request.params);
+	response.status(200).json('resposta');
+});
+
+server.get('/:codigo', (request, response) => {
+	console.log(request.params);
+	response.status(200).json(`resposta ${request.params.codigo}`);
+});
+
+server.listen(port, () => {
+	console.log(`Server listening at http://localhost:${port}`);
+});
+
+----------
+
+GET http://localhost:8080 200 Ok
+GET http://localhost:8080/123 200 Ok
+GET http://localhost:8080/abc 200 Ok
+

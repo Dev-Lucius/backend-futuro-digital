@@ -1,0 +1,52 @@
+contrato -> recebe -> valida -> busca -> processa -> grava -> responde
+
+----------
+
+mkdir projeto
+cd projeto
+npm init -y
+npm install express
+pluma server.js
+node server.js
+
+https://www.apicur.io/apicurito/pwa/
+https://editor.swagger.io/
+
+----------
+
+openapi: 3.0.2
+info:
+    title: API
+    version: 1.0.0
+paths:
+    /:
+        get:
+            responses:
+                '200':
+                    content:
+                        application/json:
+                            schema:
+                                type: string
+                    description: Ok
+
+----------
+
+// /server.js
+
+const express = require('express');
+
+const server = express();
+const port = 8080;
+
+server.get('/', (request, response) => {
+	response.status(200).json('resposta');
+});
+
+server.listen(port, () => {
+	console.log(`Server listening at http://localhost:${port}`);
+});
+
+----------
+
+GET http://localhost:8080 200 Ok
+

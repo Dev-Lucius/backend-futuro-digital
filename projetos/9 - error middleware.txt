@@ -1,0 +1,42 @@
+openapi: 3.0.2
+info:
+    title: API
+    version: 1.0.0
+paths:
+    /:
+        get:
+            responses:
+                '200':
+                    content:
+                        application/json:
+                            schema:
+                                type: string
+                    description: Ok
+
+----------
+
+// /server.js
+
+const express = require('express');
+
+const server = express();
+const port = 8080;
+
+server.get('/', (request, response) => {
+	console.log(new Date('abc').toISOString());
+	response.status(200).json('resposta');
+});
+
+server.use((error, request, response, next) => {
+	console.log(error.stack);
+	response.status(500).json(error.message);
+});
+
+server.listen(port, () => {
+	console.log(`Server listening at http://localhost:${port}`);
+});
+
+----------
+
+GET http://localhost:8080 500 Internal Server Error
+

@@ -1,0 +1,28 @@
+# Dependências Node.js
+node_modules/
+
+# Variáveis de ambiente e credenciais
+.env
+.env.*
+!.env.example
+!.env.sample
+
+# Arquivos gerados
+dist/
+build/
+coverage/
+
+# Logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+pnpm-debug.log*
+
+# Python
+.venv/
+venv/
+__pycache__/
+*.py[cod]
+
+# Sistema operacional
+.DS_Store

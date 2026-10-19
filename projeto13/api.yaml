@@ -1,0 +1,56 @@
+openapi: 3.0.2
+info:
+    title: API
+    version: 1.0.0
+paths:
+    /autenticacao:
+        post:
+            requestBody:
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/autenticacao'
+                required: true
+            responses:
+                '200':
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/token'
+                    description: Ok
+
+    /:
+        get:
+            parameters:
+                - name: Authorization
+                  description: 'Bearer {token}'
+                  schema:
+                      type: string
+                  in: header
+                  required: true
+            responses:
+                '200':
+                    content:
+                        application/json:
+                            schema:
+                                type: string
+                    description: Ok
+
+components:
+    schemas:
+        autenticacao:
+            required: [usuario, senha]
+            type: object
+            properties:
+                usuario: { type: string }
+                senha: { type: string }
+            example:
+                usuario: fulano
+                senha: '12345'
+
+        token:
+            type: object
+            properties:
+                token: { type: string }
+            example:
+                token: ABC.DEF.XYZ

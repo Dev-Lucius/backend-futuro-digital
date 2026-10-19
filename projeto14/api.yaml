@@ -1,0 +1,151 @@
+openapi: 3.0.2
+info:
+  title: Proxy Didatico - JSONPlaceholder
+  version: 1.0.0
+  description: >
+    Nosso servidor Express funciona como um PROXY (intermediario).
+    Ele recebe requisicoes de voce (cliente) e repassa para a
+    JSONPlaceholder (API externa), devolvendo os dados tratados.
+
+paths:
+  # ----------------------------------------
+  # PROXY GET - Lista posts com paginacao
+  # ----------------------------------------
+  /get:
+    get:
+      summary: Lista posts da API externa (com paginacao)
+      parameters:
+        - name: pagina
+          in: query
+          required: false
+          schema:
+            type: integer
+            default: 1
+          description: Numero da pagina
+        - name: limit
+          in: query
+          required: false
+          schema:
+            type: integer
+            default: 5
+            maximum: 10
+          description: Quantidade de posts por pagina
+      responses:
+        '200':
+          description: Lista de posts retornada com sucesso
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Post'
+
+  # ----------------------------------------
+  # PROXY POST - Cria um post na API externa
+  # ----------------------------------------
+  /post:
+    post:
+      summary: Cria um novo post na API externa
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PostEntrada'
+      responses:
+        '201':
+          description: Post criado (simulado pela API externa)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Post'
+
+  # ----------------------------------------
+  # PROXY PUT & DELETE - Operacoes por ID
+  # ----------------------------------------
+  /posts/{id}:
+    put:
+      summary: Atualiza um post existente na API externa
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+          description: ID do post a ser atualizado
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PostEntrada'
+      responses:
+        '200':
+          description: Post atualizado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Post'
+
+    delete:
+      summary: Remove um post da API externa
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+          description: ID do post a ser removido
+      responses:
+        '200':
+          description: Post removido (ou confirmacao de remocao)
+
+components:
+  schemas:
+    # ----------------------------------------
+    # Schema de um Post (resposta da API externa)
+    # ----------------------------------------
+    Post:
+      type: object
+      properties:
+        userId:
+          type: integer
+          description: ID do usuario dono do post
+        id:
+          type: integer
+          description: ID unico do post (gerado pela API externa)
+        title:
+          type: string
+          description: Titulo do post
+        body:
+          type: string
+          description: Conteudo do post
+      example:
+        userId: 1
+        id: 101
+        title: 'Titulo do post'
+        body: 'Conteudo do post'
+
+    # ----------------------------------------
+    # Schema para criar/atualizar
+    # ----------------------------------------
+    PostEntrada:
+      type: object
+      required:
+        - usuario
+        - titulo
+        - conteudo
+      properties:
+        usuario:
+          type: integer
+          description: ID do usuario criador do post
+        titulo:
+          type: string
+          description: Titulo do novo post
+        conteudo:
+          type: string
+          description: Conteudo do novo post
+      example:
+        usuario: 1
+        titulo: 'Meu novo post'
+        conteudo: 'Este eh o conteudo do post'

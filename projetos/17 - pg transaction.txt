@@ -1,0 +1,247 @@
+CREATE DATABASE banco;
+
+CREATE TABLE contacorrente (
+  codigo integer NOT NULL,
+  saldo real NOT NULL,
+  PRIMARY KEY (codigo)
+);
+
+INSERT INTO contacorrente (codigo, saldo) VALUES (1, 100), (2, 100) RETURNING *;
+
+SELECT * from contacorrente WHERE codigo = 1 FOR UPDATE;
+SELECT * from contacorrente WHERE codigo = 2 FOR UPDATE;
+
+UPDATE contacorrente SET saldo = saldo-10 WHERE codigo = 1 RETURNING *;
+UPDATE contacorrente SET saldo = saldo+10 WHERE codigo = 2 RETURNING *;
+
+BEGIN;
+COMMIT;
+ROLLBACK;
+
+----------
+
+TRANSAÇÃO
+	1) sequência de ações
+	2) ou tudo acontece ou nada acontece
+	3) BEGIN; inicia uma transação
+	4) tranca a linha da tabela com SELECT ... FOR UPDATE;
+	5) se tudo der certo, confirma a transação com COMMIT;
+	6) se algo der errado, cancela a transação com ROLLBACK;
+
+----------
+
+# /api.yaml
+
+openapi: 3.0.2
+info:
+    title: API
+    version: 1.0.0
+paths:
+    /:
+        post:
+            requestBody:
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/transferencia1'
+                required: true
+            responses:
+                '201':
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/transferencia2'
+                    description: Created
+components:
+    schemas:
+        transferencia1:
+            required:
+                - origem
+                - destino
+                - valor
+            type: object
+            properties:
+                origem:
+                    type: integer
+                destino:
+                    type: integer
+                valor:
+                    type: number
+                    minimum: 0.01
+            example:
+                origem: 1
+                destino: 2
+                valor: 10
+        transferencia2:
+            type: object
+            properties:
+                operacao:
+                    type: integer
+                origem:
+                    type: integer
+                destino:
+                    type: integer
+                valor:
+                    type: number
+                autorizacao:
+                    type: string
+            example:
+                operacao: 123
+                origem: 1
+                destino: 2
+                valor: 10
+                autorizacao: AB.CD.EF.12.34
+
+----------
+
+# /.env
+
+EXPRESS_PORT=8080
+
+DB_HOST=localhost
+DB_PORT=5432
+DB_DATABASE=banco
+DB_USER=postgres
+DB_PASSWORD=postgres
+
+----------
+
+// /server.js
+
+require('dotenv').config();
+const express = require('express');
+const validator = require('express-openapi-validator');
+const db = require('pg');
+
+const server = express();
+const port = process.env.EXPRESS_PORT;
+const pool = new db.Pool({
+	host: process.env.DB_HOST,
+	port: process.env.DB_PORT,
+	database: process.env.DB_DATABASE,
+	user: process.env.DB_USER,
+	password: process.env.DB_PASSWORD
+});
+
+server.use(express.json());
+
+server.use(validator.middleware({ apiSpec: 'api.yaml', validateRequests: true, validateResponses: false }));
+
+server.post('/', async (request, response) => {
+	let client;
+	try {
+		client = await pool.connect();
+		await client.query('BEGIN');
+		const result1 = await client.query('SELECT * FROM contacorrente WHERE codigo = $1 FOR UPDATE', [ request.body.origem ]);
+		if (result1.rows.length == 0) {
+			const error = new Error('conta origem nao encontada');
+			error.status = 404;
+			throw error;
+		}
+		if (result1.rows[0].saldo < request.body.valor) {
+			const error = new Error('saldo insuficiente');
+			error.status = 409;
+			throw error;
+		}
+		const result2 = await client.query('SELECT * FROM contacorrente WHERE codigo = $1 FOR UPDATE', [ request.body.destino ]);
+		if (result2.rows.length == 0) {
+			const error = new Error('conta destino nao encontada');
+			error.status = 404;
+			throw error;
+		}
+		const result3 = await client.query('UPDATE contacorrente SET saldo = saldo-$1 WHERE codigo = $2 RETURNING *', [ request.body.valor, request.body.origem ]);
+		console.log(result3.rows[0]);
+		const result4 = await client.query('UPDATE contacorrente SET saldo = saldo+$1 WHERE codigo = $2 RETURNING *', [ request.body.valor, request.body.destino ]);
+		console.log(result4.rows[0]);
+		await client.query('COMMIT');
+		response.status(201).json({ operacao: 123, origem: request.body.origem, destino: request.body.destino, valor: request.body.valor, autorizacao: 'AB.CD.EF.12.34' });
+	} catch (error) {
+		if (client) {
+			await client.query('ROLLBACK');
+		}
+		console.log(error.stack);
+		response.status(error.status || 500).json(error.message);
+	} finally {
+		if (client) {
+			client.release();
+		}
+	}
+});
+
+server.use((error, request, response, next) => {
+	console.log(error.stack);
+	response.status(error.status || 500).json(error.message);
+});
+
+server.listen(port, () => {
+	console.log(`Server listening at http://localhost:${port}`);
+});
+
+----------
+
+POST http://localhost:8080 201 Created
+{ "origem": 1, "destino": 2, "valor": 10 }
+POST http://localhost:8080 404 Not Found
+{ "origem": 999, "destino": 2, "valor": 10 }
+POST http://localhost:8080 404 Not Found
+{ "origem": 1, "destino": 999, "valor": 10 }
+POST http://localhost:8080 409 Conflict
+{ "origem": 1, "destino": 2, "valor": 999 }
+
+==========
+
+CREATE DATABASE loja;
+
+CREATE TABLE produto (
+	codigo integer NOT NULL,
+	nome varchar(200) NOT NULL,
+	estoque integer NOT NULL,
+	PRIMARY KEY (codigo)
+);
+
+INSERT INTO produto (codigo, nome, estoque) VALUES (100, 'notebook', 1) RETURNING *;
+
+SELECT * FROM produto WHERE codigo = 100 FOR UPDATE;
+
+UPDATE produto SET estoque = estoque - 1 WHERE codigo = 100 RETURNING *;
+
+BEGIN;
+COMMIT;
+ROLLBACK;
+
+----------
+
+server.put('/produto/:codigo/saida/:quantidade', async (request, response) => {
+	let client;
+	try {
+		client = await pool.connect();
+		await client.query('BEGIN');
+		const result1 = await client.query('SELECT * FROM produto WHERE codigo = $1 FOR UPDATE', [ request.params.codigo ]);
+		if (result1.rows.length == 0) {
+			const error = new Error('produto nao encontado');
+			error.status = 404;
+			throw error;
+		}
+		console.log(result1.rows[0]);
+		if (result1.rows[0].estoque < request.params.quantidade) {
+			const error = new Error('produto sem estoque');
+			error.status = 409;
+			throw error;
+		}
+		const result2 = await client.query('UPDATE produto SET estoque = estoque - $1 WHERE codigo = $2 RETURNING *', [ request.params.quantidade, request.params.codigo ]);
+		console.log(result2.rows[0]);
+		await client.query('COMMIT');
+		response.status(200).json({ operacao: 'saida', produto: request.params.codigo, quantidade: request.params.quantidade, quando: new Date().toISOString() });
+	} catch (error) {
+		if (client) {
+			await client.query('ROLLBACK');
+		}
+		console.log(error.stack);
+		response.status(error.status || 500).json(error.message);
+	} finally {
+		if (client) {
+			client.release();
+		}
+	}
+});
+
