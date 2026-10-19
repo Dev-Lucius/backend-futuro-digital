@@ -1,4 +1,4 @@
-# 🚀 Jornada BackEnd com Node.js
+# Jornada BackEnd com Node.js
 
 ![Node.js](https://img.shields.io/badge/Node.js-18+-green?logo=node.js)
 ![Express](https://img.shields.io/badge/Express-5.x-black?logo=express)
@@ -11,7 +11,7 @@
 
 ---
 
-## 📚 O que estou estudando
+## O que estou estudando
 
 Este repositório documenta minha evolução como desenvolvedor back-end, partindo dos fundamentos HTTP até transações bancárias com PostgreSQL.
 
@@ -32,7 +32,7 @@ Este repositório documenta minha evolução como desenvolvedor back-end, partin
 
 ---
 
-## 🗂️ Módulos
+## Módulos
 
 ### 01 — Fundamentos HTTP
 **Conceitos:** Path Params, Query Params, Headers, Request/Response Body, status HTTP.  
@@ -88,7 +88,7 @@ Este repositório documenta minha evolução como desenvolvedor back-end, partin
 
 ---
 
-## 🛠️ Tecnologias e Ferramentas
+## Tecnologias e Ferramentas
 
 | Tecnologia | Uso |
 |------------|-----|
@@ -104,7 +104,7 @@ Este repositório documenta minha evolução como desenvolvedor back-end, partin
 
 ---
 
-## 🎯 Como usar este repositório
+## Como usar este repositório
 
 Cada pasta é um **projeto independente** com seu próprio:
 
