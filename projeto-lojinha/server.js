@@ -25,6 +25,12 @@ const rolesMiddleware = (roles) => (request, response, next) => {
 
 server.use(express.json());
 
+// server.use((request, response, next) => {
+// 	console.log(new Date().toISOString());
+// 	console.log(request);
+// 	next();
+// });
+
 server.use(
 	validator.middleware({
 		apiSpec: 'api.yaml',
@@ -129,6 +135,80 @@ server.put('/produto/:codigo', rolesMiddleware([ 1 ]), async (request, response)
 		response.status(500).json(error.message);
 	}
 });
+
+server.put('/produto/:codigo/entrada/:quantidade', rolesMiddleware([ 1 ]), async (request, response) => {
+    let connection;
+	try {
+		connection = await pool.connect();
+		await connection.query('BEGIN');
+		const result1 = await connection.query('SELECT * FROM produto WHERE codigo = $1 FOR UPDATE', [request.params.codigo]);
+
+		if(result1.rows.length == 0) {
+			const error = new Error('produto nao encontado');
+			error.status = 404;
+			throw error;
+		}
+		console.log(result1.rows[0]);
+
+		const result2 = await connection.query('UPDATE produto SET quantidade = quantidade + $1 WHERE codigo = $2 RETURNING *', [ request.params.quantidade, request.params.codigo ]);
+		console.log(result2.rows[0]);
+
+		await connection.query('COMMIT');
+		response.status(200).json(result2.rows[0]);
+	} catch (error) {
+		if (connection) {
+			await connection.query('ROLLBACK');
+		}
+		console.log(error.stack);
+		response.status(error.status || 500).json(error.message);
+	} finally {
+		if (connection) {
+			connection.release();
+		}
+	}
+});
+
+server.put("/produto/:codigo/saida/:quantidade", async (request, response) => {
+    let connection;
+    try {
+      connection = await pool.connect();
+      await connection.query("BEGIN");
+      const result1 = await connection.query(
+        "SELECT * FROM produto WHERE codigo = $1 FOR UPDATE",
+        [request.params.codigo]
+      );
+      if (result1.rows.length == 0) {
+        const error = new Error("produto nao encontado");
+        error.status = 404;
+        throw error;
+      }
+      console.log(result1.rows[0]);
+      if (result1.rows[0].estoque < request.params.quantidade) {
+        const error = new Error("produto sem estoque");
+        error.status = 409;
+        throw error;
+      }
+      const result2 = await connection.query(
+        "UPDATE produto SET quantidade = quantidade - $1 WHERE codigo = $2 RETURNING *",
+        [request.params.quantidade, request.params.codigo]
+      );
+      console.log(result2.rows[0]);
+      await connection.query("COMMIT");
+      response
+        .status(200)
+        .json(result2.rows[0]);
+    } catch (error) {
+      if (connection) {
+        await connection.query("ROLLBACK");
+      }
+      console.log(error.stack);
+      response.status(error.status || 500).json(error.message);
+    } finally {
+      if (connection) {
+        connection.release();
+      }
+    }
+  });
 
 server.use((error, request, response, next) => {
 	console.log(error.stack);
