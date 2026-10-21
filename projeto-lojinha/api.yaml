@@ -538,4 +538,3 @@ components:
             scheme: bearer
             bearerFormat: JWT
             type: http
-
