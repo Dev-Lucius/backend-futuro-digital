@@ -26,3 +26,14 @@ INSERT INTO venda (vendedor, produto, quando, quantidade) VALUES
 (3, 7, '2026-10-23 10:00:00', 4),
 (5, 1, '2026-10-24 16:30:00', 1),
 (2, 2, '2026-10-25 11:20:00', 2);
+
+-- Atualizando Papeis
+-- Ana Costa será a gerente
+UPDATE funcionario
+SET papel = 1
+WHERE codigo = 4;
+
+-- Os demais funcionários serão vendedores
+UPDATE funcionario
+SET papel = 2
+WHERE codigo IN (1, 2, 3, 5);
