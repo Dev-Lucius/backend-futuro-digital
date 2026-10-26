@@ -4,6 +4,7 @@ const validator = require('express-openapi-validator');
 const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
 const db = require('pg');
+const { log } = require('console');
 
 const server = express();
 const port = process.env.EXPRESS_PORT;
@@ -208,7 +209,116 @@ server.put("/produto/:codigo/saida/:quantidade", async (request, response) => {
         connection.release();
       }
     }
-  });
+});
+
+// Vendas
+// GET /venda
+// 1° versao
+// server.get("/venda", rolesMiddleware([ 1 ]), async (request, response) => {
+
+// 	try {
+// 		let result;
+	
+// 		let pagina = 0;
+// 		if (request.query.pagina != undefined){		
+// 			pagina = parseInt(request.query.pagina);
+// 		}
+
+// 		if((request.query.inicio === undefined) && (request.query.fim === undefined) && (request.query.vendedor === undefined)){
+// 			// SELECT * FROM venda OFFSET ? LIMIT ?;
+// 			result = await pool.query('SELECT * FROM venda OFFSET $1 LIMIT 5', [pagina*5]);
+
+// 		}
+
+// 		if((request.query.inicio != undefined) && (request.query.fim === undefined) && (request.query.vendedor === undefined)){
+// 			// SELECT * FROM venda WHERE quando >= ? OFFSET ? LIMIT ?;
+// 			result = await pool.query('SELECT * FROM venda WHERE quando >= $1 OFFSET $2 LIMIT 5', [request.query.inicio, pagina*5 ]);
+// 		}
+
+// 		if((request.query.inicio === undefined) && (request.query.fim != undefined) && (request.query.vendedor === undefined)){
+// 			// SELECT * FROM venda WHERE quando <= ? OFFSET ? LIMIT ?;
+// 			result = await pool.query('SELECT * FROM venda WHERE quando <= $1 OFFSET $2 LIMIT 5', [request.query.fim, pagina*5 ]);
+// 		}
+
+// 		if((request.query.inicio != undefined) && (request.query.fim != undefined) && (request.query.vendedor === undefined)){
+// 			// SELECT * FROM venda WHERE quando >= ? AND quando <= ? OFFSET ? LIMIT ?;
+// 			result = await pool.query('SELECT * FROM venda WHERE quando >= $1 AND quando <= $2 OFFSET $3 LIMIT 5', [request.query.inicio, request.query.fim, pagina*5])
+// 		}
+
+// 		if((request.query.inicio === undefined) && (request.query.fim === undefined) && (request.query.vendedor != undefined)){
+// 			// SELECT * FROM venda WHERE vendedor = ? OFFSET ? LIMIT ?;
+// 			result = await pool.query('SELECT * FROM venda WHERE vendedor = $1 OFFSET $2 LIMIT 5', [request.query.vendedor, pagina*5]);
+// 		}
+
+// 		if((request.query.inicio != undefined) && (request.query.fim === undefined) && (request.query.vendedor != undefined)){
+// 			// SELECT * FROM venda WHERE quando >= ? AND vendedor = ? OFFSET ? LIMIT ?;
+// 			result = await pool.query('SELECT * FROM venda WHERE quando >= $1 AND vendedor = $2 OFFSET $3 LIMIT 5', [request.query.inicio, request.query.vendedor, pagina*5]);
+// 		}
+
+// 		if((request.query.inicio === undefined) && (request.query.fim != undefined) && (request.query.vendedor != undefined)){
+// 			// SELECT * FROM venda WHERE quando <= ? AND vendedor = ? OFFSET ? LIMIT ?;
+// 			result = await pool.query('SELECT * FROM venda WHERE quando <= $1 AND vendedor = $2 OFFSET $3 LIMIT 5', [request.query.fim, request.query.vendedor, pagina*5]);
+// 		}
+
+// 		if((request.query.inicio != undefined) && (request.query.fim != undefined) && (request.query.vendedor != undefined)){
+// 			// SELECT * FROM venda WHERE quando >= ? AND quando <= ? AND vendedor = ? OFFSET ? LIMIT ?;
+// 			result = await pool.query('SELECT * FROM venda WHERE quando >= $1 AND quando <= $2 AND vendedor = $3 OFFSET $4 LIMIT 5', [request.query.inicio, request.query.fim, request.query.vendedor, pagina*5]);
+// 		}
+// 		response.status(200).json(result.rows);
+// 	} catch (error) {
+// 		console.log(error);
+// 		response.status(500).json(error.message);
+// 	}
+// });
+
+// 2° Versao
+server.get("/venda", rolesMiddleware([ 1 ]), async (request, response) => {
+	try {
+		let result;
+	
+		let pagina = 0;
+		if (request.query.pagina != undefined){		
+			pagina = parseInt(request.query.pagina);
+		}
+
+		let inicio = '1900-01-01';
+		if(request.query.inicio != undefined){
+			inicio = request.query.inicio;
+		}
+
+		let fim = '3000-01-01';
+		if(request.query.fim != undefined){
+			fim = request.query.fim;
+		}
+
+		if(request.query.vendedor == undefined){
+			// SELECT * FROM venda WHERE quando >= ? AND quando <= ? OFFSET ? LIMIT ?;
+			result = await pool.query('SELECT * FROM venda WHERE quando >= $1 AND quando <= $2 OFFSET $3 LIMIT 5', [inicio, fim, pagina*5])
+
+		} else {
+			// SELECT * FROM venda WHERE quando >= ? AND quando <= ? AND vendedor = ? OFFSET ? LIMIT ?;
+			result = await pool.query('SELECT * FROM venda WHERE quando >= $1 AND quando <= $2 AND vendedor = $3 OFFSET $4 LIMIT 5', [inicio, fim, request.query.vendedor, pagina*5]);
+		}
+		response.status(200).json(result.rows);
+	} catch (error) {
+		console.log(error);
+		response.status(500).json(error.message);
+	}	
+});
+
+server.get('/venda/:codigo', rolesMiddleware([ 1 ]), async (request, response) => {
+	try {
+		const result = await pool.query('SELECT * FROM venda WHERE codigo = $1', [ request.params.codigo ]);
+		if (result.rows.length == 0) {
+			response.status(404).json();
+			return;
+		}
+		response.status(200).json(result.rows[0]);
+	} catch (error) {
+		console.log(error.stack);
+		response.status(500).json(error.message);
+	}
+});
 
 server.use((error, request, response, next) => {
 	console.log(error.stack);
