@@ -286,6 +286,8 @@ server.get("/venda", rolesMiddleware([ 1 ]), async (request, response) => {
 			inicio = request.query.inicio;
 		}
 
+		// De Outro Modo...
+		// let fim = new Date().toISOString();
 		let fim = '3000-01-01';
 		if(request.query.fim != undefined){
 			fim = request.query.fim;
