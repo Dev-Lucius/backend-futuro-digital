@@ -21,10 +21,9 @@ CREATE TABLE produto(
 
 CREATE TABLE venda(
     codigo serial PRIMARY KEY,
-    vendedor INTEGER REFERENCES funcionario(id),
-    produto INTEGER REFERENCES produto(id),
+    vendedor INTEGER REFERENCES funcionario(codigo),
+    produto INTEGER REFERENCES produto(codigo),
     quando TIMESTAMP,
-    quantidade INTEGER NOT NULL,
+    quantidade INTEGER NOT NULL
 );
-
 
