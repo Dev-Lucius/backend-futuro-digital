@@ -77,8 +77,7 @@ server.get('/produto', async (request, response) => {
 		const result = await pool.query('SELECT descricao, preco, quantidade FROM produto WHERE descricao ILIKE $1 OFFSET $2 LIMIT 5', [ caracteristicas, pagina*5 ]);
 		response.status(200).json(result.rows);
 	} catch (error) {
-		console.log(error.stack);
-		response.status(500).json(error.message);
+		c
 	}
 });
 
@@ -286,9 +285,7 @@ server.get("/venda", rolesMiddleware([ 1 ]), async (request, response) => {
 			inicio = request.query.inicio;
 		}
 
-		// De Outro Modo...
-		// let fim = new Date().toISOString();
-		let fim = '3000-01-01';
+		let fim = new Date().toISOString();
 		if(request.query.fim != undefined){
 			fim = request.query.fim;
 		}
@@ -308,6 +305,7 @@ server.get("/venda", rolesMiddleware([ 1 ]), async (request, response) => {
 	}	
 });
 
+// GET /venda/{codigo}
 server.get('/venda/:codigo', rolesMiddleware([ 1 ]), async (request, response) => {
 	try {
 		const result = await pool.query('SELECT * FROM venda WHERE codigo = $1', [ request.params.codigo ]);
@@ -321,6 +319,91 @@ server.get('/venda/:codigo', rolesMiddleware([ 1 ]), async (request, response) =
 		response.status(500).json(error.message);
 	}
 });
+	
+
+// POST /venda
+server.post('/venda', async (request, response) => {
+    const vendedor = request.jwtpayload.sub;
+    const { produto, quantidade } = request.body;
+    const authorization = request.headers.authorization;
+    const urlBase = `http://localhost:${process.env.EXPRESS_PORT}`;
+ 
+    try {
+        // Baixa o estoque pela rota de saída
+		// aula 15 - fetch
+        const fetch_response = await fetch(`${urlBase}/produto/${produto}/saida/${quantidade}`, {
+            method: 'PUT',
+            headers: {
+                'Accept': 'application/json',
+                'Authorization': authorization
+            },
+        });
+ 
+        if (!fetch_response.ok) {
+            // Repassa o status e a mensagem da rota de saída (404, 409...)
+            const corpo = await fetch_response.json().catch(() => ({ erro: "Falha ao baixar o estoque" }));
+            return response.status(fetch_response.status).json(corpo);
+        }
+ 
+        // Registra a venda; se falhar, devolve o estoque pela rota de entrada
+        try {
+            const result2 = await pool.query(
+                `
+                INSERT INTO venda (vendedor, produto, quando, quantidade)
+                VALUES ($1, $2, current_timestamp, $3)
+                RETURNING codigo, vendedor, produto, quando, quantidade
+                `,
+                [vendedor, produto, quantidade]
+            );
+            return response.status(201).json(result2.rows[0]);
+        } catch (erro) {
+			// Baixa já foi feita, então devolvemos o estoque pela rota de entrada
+            const devolucao = await fetch(`${urlBase}/produto/${produto}/entrada/${quantidade}`, {
+                method: 'PUT',
+                headers: {
+                    'Accept': 'application/json',
+                    'Authorization': authorization
+                },
+            }).catch(() => null);
+			
+			// Se nem a devolução funcionou, o estoque ficou inconsistente: só dá para registrar no log
+            if (!devolucao || !devolucao.ok) {
+                console.error(`Falha ao devolver o estoque do produto ${produto}`);
+            }
+			// relança o erro
+            throw erro;
+        }
+    } catch (erro) {
+		// mostrando o erro no terminal
+        console.error(erro);
+        return response.status(500).json({ erro: "Erro interno do servidor" });
+    }
+});
+
+// DELETE /venda/{codigo}
+server.delete("/venda/:codigo", rolesMiddleware([ 1 ]), async (request, response) => {
+	try {
+	  const result = await pool.query(
+		"DELETE FROM venda WHERE codigo = $1 RETURNING *",
+		[request.params.codigo]
+	  );
+	  if (result.rows.length == 0) {
+		return response
+		  .status(404)
+		  .json({ erro: "Pessoa nao encontrada para remover" });
+	  }
+  
+	  console.log("DELETE realizado:");
+	  console.log(result.rows[0]);
+	  // 204 No Content = sucesso, mas sem corpo na resposta.
+	  // Como a pessoa foi apagada, nao faz sentido devolver os dados dela.
+	  response.status(204).json(result.rows[0]);
+	} catch (error) {
+	  console.error("--- ERRO NO DELETE /:codigo ---");
+	  console.error(error.stack);
+	  response.status(500).json({ erro: error.message });
+	}
+  });
 
 server.use((error, request, response, next) => {
 	console.log(error.stack);
