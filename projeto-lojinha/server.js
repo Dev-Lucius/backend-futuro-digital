@@ -77,7 +77,8 @@ server.get('/produto', async (request, response) => {
 		const result = await pool.query('SELECT descricao, preco, quantidade FROM produto WHERE descricao ILIKE $1 OFFSET $2 LIMIT 5', [ caracteristicas, pagina*5 ]);
 		response.status(200).json(result.rows);
 	} catch (error) {
-		c
+		console.log(error.stack);
+		response.status(500).json(error.message);
 	}
 });
 
