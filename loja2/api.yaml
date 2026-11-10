@@ -1,0 +1,754 @@
+openapi: 3.0.2
+info:
+    title: Lojinha
+    version: 1.0.0
+paths:
+    /teste:
+        get:
+            summary: Testar funcionamento da API
+            description: Verifica se a API está funcionando corretamente.
+            responses:
+                '200':
+                    description: API funcionando corretamente
+                    content:
+                        application/json:
+                            schema:
+                                type: object
+                                properties:
+                                    status:
+                                        type: string
+                                        example: ok
+                                    mensagem:
+                                        type: string
+                                        example: API funcionando!
+                '500':
+                    description: Erro interno do servidor
+                    content:
+                        application/json:
+                            schema:
+                                type: string
+    /venda:
+        get:
+            parameters:
+            -   name: inicio
+                schema:
+                    format: date
+                    type: string
+                in: query
+            -   name: fim
+                schema:
+                    format: date
+                    type: string
+                in: query
+            -   name: vendedor
+                schema:
+                    minimum: 0
+                    type: integer
+                in: query
+            -   name: pagina
+                schema:
+                    minimum: 0
+                    type: integer
+                in: query
+            responses:
+                '200':
+                    content:
+                        application/json:
+                            schema:
+                                type: array
+                                items:
+                                    $ref: '#/components/schemas/venda2'
+                    description: Ok
+                '400':
+                    content:
+                        application/json:
+                            schema:
+                                type: string
+                    description: Bad Request
+                '401':
+                    content:
+                        application/json:
+                            schema:
+                                type: string
+                    description: Unauthorized
+                '403':
+                    content:
+                        application/json:
+                            schema:
+                                type: string
+                    description: Forbidden
+            security:
+            -   bearer: []
+        post:
+            requestBody:
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/venda1'
+                required: true
+            responses:
+                '201':
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/venda2'
+                    description: Created
+                '400':
+                    content:
+                        application/json:
+                            schema:
+                                type: string
+                    description: Bad Request
+                '401':
+                    content:
+                        application/json:
+                            schema:
+                                type: string
+                    description: Unauthorized
+                '404':
+                    content:
+                        application/json:
+                            schema:
+                                type: string
+                    description: Not Found
+                '409':
+                    content:
+                        application/json:
+                            schema:
+                                type: string
+                    description: Conflict
+            security:
+            -   bearer: []
+    /venda/{codigo}:
+        get:
+            responses:
+                '200':
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/venda2'
+                    description: Ok
+                '400':
+                    content:
+                        application/json:
+                            schema:
+                                type: string
+                    description: Bad Request
+                '401':
+                    content:
+                        application/json:
+                            schema:
+                                type: string
+                    description: Unauthorized
+                '403':
+                    content:
+                        application/json:
+                            schema:
+                                type: string
+                    description: Forbidden
+                '404':
+                    content:
+                        application/json:
+                            schema:
+                                type: string
+                    description: Not Found
+            security:
+            -   bearer: []
+        delete:
+            responses:
+                '204':
+                    description: No Content
+                '400':
+                    content:
+                        application/json:
+                            schema:
+                                type: string
+                    description: Bad Request
+                '401':
+                    content:
+                        application/json:
+                            schema:
+                                type: string
+                    description: Unauthorized
+                '403':
+                    content:
+                        application/json:
+                            schema:
+                                type: string
+                    description: Forbidden
+                '404':
+                    content:
+                        application/json:
+                            schema:
+                                type: string
+                    description: Not Found
+            security:
+            -   bearer: []
+        parameters:
+        -   $ref: '#/components/parameters/codigo'
+    /funcionario/autenticacao:
+        post:
+            requestBody:
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/autenticacao'
+                required: true
+            responses:
+                '200':
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/token'
+                    description: Ok
+                '400':
+                    content:
+                        application/json:
+                            schema:
+                                type: string
+                    description: Bad Request
+                '401':
+                    content:
+                        application/json:
+                            schema:
+                                type: string
+                    description: Unauthorized
+    /funcionario:
+        get:
+            parameters:
+            -   name: nome
+                schema:
+                    type: string
+                in: query
+            -   name: pagina
+                schema:
+                    minimum: 0
+                    type: integer
+                in: query
+            responses:
+                '200':
+                    description: Ok
+                    content:
+                        application/json:
+                            schema:
+                                type: array
+                                items:
+                                    $ref: '#/components/schemas/funcionario2'
+                '400':
+                    $ref: '#/components/responses/erro400'
+                '401':
+                    $ref: '#/components/responses/erro401'
+                '403':
+                    $ref: '#/components/responses/erro403'
+            security:
+            -   bearer: []
+        post:
+            requestBody:
+                required: true
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/funcionario1'
+            responses:
+                '201':
+                    description: Created
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/funcionario2'
+                '400':
+                    $ref: '#/components/responses/erro400'
+                '401':
+                    $ref: '#/components/responses/erro401'
+                '403':
+                    $ref: '#/components/responses/erro403'
+                '409':
+                    $ref: '#/components/responses/erro409'
+            security:
+            -   bearer: []
+    /funcionario/{codigo}:
+        get:
+            responses:
+                '200':
+                    description: Ok
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/funcionario2'
+                '400':
+                    $ref: '#/components/responses/erro400'
+                '401':
+                    $ref: '#/components/responses/erro401'
+                '403':
+                    $ref: '#/components/responses/erro403'
+                '404':
+                    $ref: '#/components/responses/erro404'
+            security:
+            -   bearer: []
+        put:
+            requestBody:
+                required: true
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/funcionario1'
+            responses:
+                '200':
+                    description: Ok
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/funcionario2'
+                '400':
+                    $ref: '#/components/responses/erro400'
+                '401':
+                    $ref: '#/components/responses/erro401'
+                '403':
+                    $ref: '#/components/responses/erro403'
+            security:
+            -   bearer: []
+        parameters:
+        -   $ref: '#/components/parameters/codigo'
+    /funcionario/autenticacao/renovacao:
+        post:
+            responses:
+                '200':
+                    description: Ok
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/token'
+                '400':
+                    $ref: '#/components/responses/erro400'
+                '401':
+                    $ref: '#/components/responses/erro401'
+            security:
+            -   bearer: []
+    /venda/{codigo}/extorno:
+        put:
+            responses:
+                '200':
+                    description: Ok
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/venda2'
+                '400':
+                    $ref: '#/components/responses/erro400'
+                '401':
+                    $ref: '#/components/responses/erro401'
+                '403':
+                    $ref: '#/components/responses/erro403'
+                '404':
+                    $ref: '#/components/responses/erro404'
+                '409':
+                    $ref: '#/components/responses/erro409'
+            security:
+            -   bearer: []
+        parameters:
+        -   $ref: '#/components/parameters/codigo'
+    /produto:
+        get:
+            parameters:
+            -   name: caracteristicas
+                schema:
+                    type: string
+                in: query
+            -   name: pagina
+                schema:
+                    minimum: 0
+                    type: integer
+                in: query
+            responses:
+                '200':
+                    content:
+                        application/json:
+                            schema:
+                                type: array
+                                items:
+                                    $ref: '#/components/schemas/produto1'
+                    description: Ok
+        post:
+            requestBody:
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/produto2'
+                required: true
+            responses:
+                '201':
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/produto3'
+                    description: Created
+                '400':
+                    content:
+                        application/json:
+                            schema:
+                                type: string
+                    description: Bad Request
+                '401':
+                    content:
+                        application/json:
+                            schema:
+                                type: string
+                    description: Unauthorized
+                '403':
+                    content:
+                        application/json:
+                            schema:
+                                type: string
+                    description: Forbidden
+                '409':
+                    content:
+                        application/json:
+                            schema:
+                                type: string
+                    description: Conflict
+            security:
+            -   bearer: []
+    /produto/{codigo}:
+        get:
+            responses:
+                '200':
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/produto1'
+                    description: Ok
+                '400':
+                    content:
+                        application/json:
+                            schema:
+                                type: string
+                    description: Bad Request
+                '404':
+                    content:
+                        application/json:
+                            schema:
+                                type: string
+                    description: Not Found
+        put:
+            requestBody:
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/produto2'
+                required: true
+            responses:
+                '200':
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/produto3'
+                    description: Ok
+                '400':
+                    content:
+                        application/json:
+                            schema:
+                                type: string
+                    description: Bad Request
+                '401':
+                    content:
+                        application/json:
+                            schema:
+                                type: string
+                    description: Unauthorized
+                '403':
+                    content:
+                        application/json:
+                            schema:
+                                type: string
+                    description: Forbidden
+                '404':
+                    content:
+                        application/json:
+                            schema:
+                                type: string
+                    description: Not Found
+            security:
+            -   bearer: []
+        parameters:
+        -   $ref: '#/components/parameters/codigo'
+    /produto/{codigo}/entrada/{quantidade}:
+        put:
+            responses:
+                '200':
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/produto3'
+                    description: Ok
+                '400':
+                    content:
+                        application/json:
+                            schema:
+                                type: string
+                    description: Bad Request
+                '401':
+                    content:
+                        application/json:
+                            schema:
+                                type: string
+                    description: Unauthorized
+                '403':
+                    content:
+                        application/json:
+                            schema:
+                                type: string
+                    description: Forbidden
+                '404':
+                    content:
+                        application/json:
+                            schema:
+                                type: string
+                    description: Not Found
+            security:
+            -   bearer: []
+        parameters:
+        -   $ref: '#/components/parameters/codigo'
+        -   $ref: '#/components/parameters/quantidade'
+    /produto/{codigo}/saida/{quantidade}:
+        put:
+            responses:
+                '200':
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/produto3'
+                    description: Ok
+                '400':
+                    content:
+                        application/json:
+                            schema:
+                                type: string
+                    description: Bad Request
+                '401':
+                    content:
+                        application/json:
+                            schema:
+                                type: string
+                    description: Unauthorized
+                '404':
+                    content:
+                        application/json:
+                            schema:
+                                type: string
+                    description: Not Found
+                '409':
+                    content:
+                        application/json:
+                            schema:
+                                type: string
+                    description: Conflict
+            security:
+            -   bearer: []
+        parameters:
+        -   $ref: '#/components/parameters/codigo'
+        -   $ref: '#/components/parameters/quantidade'
+components:
+    schemas:
+        funcionario1:
+            required:
+            - nome
+            - salario
+            - papel
+            - senha
+            type: object
+            properties:
+                nome:
+                    type: string
+                salario:
+                    minimum: 0.01
+                    type: number
+                papel:
+                    enum:
+                    - 1
+                    - 2
+                    - 3
+                    type: integer
+                senha:
+                    type: string
+            example:
+                nome: Fulano de Tal
+                salario: 2500.5
+                papel: 2
+                senha: '12345'
+        funcionario2:
+            type: object
+            properties:
+                codigo:
+                    type: integer
+                nome:
+                    type: string
+                salario:
+                    type: number
+                papel:
+                    type: integer
+                senha:
+                    type: string
+            example:
+                codigo: 51
+                nome: Fulano de Tal
+                salario: 2500.5
+                papel: 2
+                senha: '12345'
+        autenticacao:
+            required:
+            - usuario
+            - senha
+            type: object
+            properties:
+                usuario:
+                    minimum: 0
+                    type: integer
+                senha:
+                    type: string
+            example:
+                usuario: 51
+                senha: '12345'
+        token:
+            type: object
+            properties:
+                token:
+                    type: string
+            example:
+                token: ABC.DEF.XYZ
+        produto1:
+            type: object
+            properties:
+                descricao:
+                    type: string
+                preco:
+                    type: number
+                quantidade:
+                    type: integer
+            example:
+                descricao: sofa 3 lugares tecido
+                preco: 765.43
+                quantidade: 3
+        produto2:
+            required:
+            - descricao
+            - preco
+            - comissao
+            type: object
+            properties:
+                descricao:
+                    type: string
+                preco:
+                    minimum: 0.01
+                    type: number
+                comissao:
+                    maximum: 100
+                    minimum: 0
+                    type: number
+            example:
+                descricao: sofa 3 lugares tecido
+                preco: 765.43
+                comissao: 20.5
+        produto3:
+            type: object
+            properties:
+                codigo:
+                    type: integer
+                descricao:
+                    type: string
+                preco:
+                    type: number
+                quantidade:
+                    type: integer
+                comissao:
+                    type: number
+            example:
+                codigo: 123
+                descricao: sofa 3 lugares tecido
+                preco: 765.43
+                quantidade: 3
+                comissao: 20.5
+        venda1:
+            required:
+            - produto
+            - quantidade
+            type: object
+            properties:
+                produto:
+                    type: integer
+                quantidade:
+                    minimum: 1
+                    type: integer
+            example:
+                produto: 123
+                quantidade: 1
+        venda2:
+            type: object
+            properties:
+                codigo:
+                    type: integer
+                vendedor:
+                    type: integer
+                produto:
+                    type: integer
+                quando:
+                    format: date-time
+                    type: string
+                quantidade:
+                    type: integer
+            example:
+                codigo: 678
+                vendedor: 51
+                produto: 123
+                quando: '2026-12-31T12:00:00-03:00'
+                quantidade: 1
+    parameters:
+        codigo:
+            name: codigo
+            schema:
+                minimum: 0
+                type: integer
+            in: path
+            required: true
+        quantidade:
+            name: quantidade
+            schema:
+                minimum: 1
+                type: integer
+            in: path
+            required: true
+    securitySchemes:
+        bearer:
+            scheme: bearer
+            bearerFormat: JWT
+            type: http
+    responses:
+        erro400:
+            description: Bad Request
+            content:
+                application/json:
+                    schema:
+                        type: string
+        erro401:
+            description: Unauthorized
+            content:
+                application/json:
+                    schema:
+                        type: string
+        erro403:
+            description: Forbidden
+            content:
+                application/json:
+                    schema:
+                        type: string
+        erro404:
+            description: Not Found
+            content:
+                application/json:
+                    schema:
+                        type: string
+        erro409:
+            description: Conflict
+            content:
+                application/json:
+                    schema:
+                        type: string
