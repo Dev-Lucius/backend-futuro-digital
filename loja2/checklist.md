@@ -158,12 +158,12 @@
 
 ### 4.3. POST `/produto`
 
-- [ ] Implementar cadastro de produtos.
-- [ ] Validar descrição.
-- [ ] Validar preço.
-- [ ] Validar comissão.
-- [ ] Inserir produto no PostgreSQL.
-- [ ] Retornar o produto cadastrado.
+- [x] Implementar cadastro de produtos.
+- [x] Validar descrição.
+- [x] Validar preço.
+- [x] Validar comissão.
+- [x] Inserir produto no PostgreSQL.
+- [x] Retornar o produto cadastrado.
 
 ### 4.4. PUT `/produto/:codigo`
 
@@ -276,11 +276,11 @@
 - [x] Separação entre autenticação e autorização.
 - [x] Utilização de variáveis de ambiente para informações sensíveis.
 - [x] Remoção do campo senha nas respostas das consultas GET de funcionários.
-- [ ] Revisar todas as respostas para garantir que hashes de senhas nunca sejam expostos.
-- [ ] Implementar validações completas dos parâmetros de entrada.
-- [ ] Revisar as permissões de acesso de todas as rotas protegidas.
-- [ ] Validar a existência e o formato do cabeçalho Authorization.
-- [ ] Implementar estratégia adequada de renovação e revogação de tokens.
+- [x] Revisar todas as respostas para garantir que hashes de senhas nunca sejam expostos.
+- [x] Implementar validações completas dos parâmetros de entrada.
+- [x] Revisar as permissões de acesso de todas as rotas protegidas.
+- [x] Validar a existência e o formato do cabeçalho Authorization.
+- [x] Implementar estratégia adequada de renovação e revogação de tokens.
 - [x] Revisar o tratamento de erros de autenticação e autorização.
 - [x] Garantir que operações que alteram múltiplos registros utilizem transações quando necessário.
 
