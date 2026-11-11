@@ -1,4 +1,4 @@
-# 🛒 API Lojinha — Checklist de Desenvolvimento
+# API Lojinha — Checklist de Desenvolvimento
 
 ## 1. Configuração e infraestrutura
 
