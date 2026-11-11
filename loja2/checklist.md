@@ -208,46 +208,46 @@
 
 ### 5.2. GET `/venda/:codigo`
 
-- [ ] Implementar consulta de venda pelo código.
-- [ ] Validar o código informado.
-- [ ] Verificar a existência da venda.
-- [ ] Retornar HTTP 404 quando não encontrada.
-- [ ] Retornar os dados da venda.
+- [x] Implementar consulta de venda pelo código.
+- [x] Validar o código informado.
+- [x] Verificar a existência da venda.
+- [x] Retornar HTTP 404 quando não encontrada.
+- [x] Retornar os dados da venda.
 
 ### 5.3. POST `/venda`
 
-- [ ] Implementar registro de vendas.
-- [ ] Recuperar o vendedor através do JWT.
-- [ ] Receber o código do produto.
-- [ ] Receber a quantidade vendida.
-- [ ] Verificar a existência do produto.
-- [ ] Verificar a disponibilidade de estoque.
-- [ ] Calcular o valor da venda.
-- [ ] Calcular a comissão do vendedor.
-- [ ] Registrar a venda no PostgreSQL.
-- [ ] Atualizar a quantidade disponível do produto.
-- [ ] Garantir consistência entre registro da venda e atualização do estoque através de transação.
-- [ ] Retornar a venda cadastrada.
+- [x] Implementar registro de vendas.
+- [x] Recuperar o vendedor através do JWT.
+- [x] Receber o código do produto.
+- [x] Receber a quantidade vendida.
+- [x] Verificar a existência do produto.
+- [x] Verificar a disponibilidade de estoque.
+- [x] Calcular o valor da venda.
+- [x] Calcular a comissão do vendedor.
+- [x] Registrar a venda no PostgreSQL.
+- [x] Atualizar a quantidade disponível do produto.
+- [x] Garantir consistência entre registro da venda e atualização do estoque através de transação.
+- [x] Retornar a venda cadastrada.
 
 ### 5.4. DELETE `/venda/:codigo`
 
-- [ ] Implementar exclusão de vendas.
-- [ ] Validar o código informado.
-- [ ] Verificar a existência da venda.
-- [ ] Avaliar as regras de negócio para exclusão.
-- [ ] Retornar HTTP 204 após a exclusão.
+- [x] Implementar exclusão de vendas.
+- [x] Validar o código informado.
+- [x] Verificar a existência da venda.
+- [x] Avaliar as regras de negócio para exclusão.
+- [x] Retornar HTTP 204 após a exclusão.
 
 ### 5.5. PUT `/venda/:codigo/extorno`
 
-- [ ] Implementar estorno de vendas.
-- [ ] Verificar a existência da venda.
-- [ ] Verificar se a venda já foi estornada.
-- [ ] Recuperar o produto relacionado à venda.
-- [ ] Devolver a quantidade ao estoque.
-- [ ] Registrar o estorno.
-- [ ] Garantir consistência utilizando transação no PostgreSQL.
-- [ ] Impedir estornos duplicados.
-- [ ] Retornar a venda atualizada.
+- [x] Implementar estorno de vendas.
+- [x] Verificar a existência da venda.
+- [x] Verificar se a venda já foi estornada.
+- [x] Recuperar o produto relacionado à venda.
+- [x] Devolver a quantidade ao estoque.
+- [x] Registrar o estorno.
+- [x] Garantir consistência utilizando transação no PostgreSQL.
+- [x] Impedir estornos duplicados.
+- [x] Retornar a venda atualizada.
 
 ## 6. Rotas auxiliares e tratamento de erros
 
