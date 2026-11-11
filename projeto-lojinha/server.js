@@ -391,7 +391,7 @@ server.delete("/venda/:codigo", rolesMiddleware([ 1 ]), async (request, response
 	  if (result.rows.length == 0) {
 		return response
 		  .status(404)
-		  .json({ erro: "Pessoa nao encontrada para remover" });
+		  .json({ erro: "Venda nao encontrada para remover" });
 	  }
   
 	  console.log("DELETE realizado:");
