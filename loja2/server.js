@@ -300,6 +300,141 @@ server.put("/produto/:codigo/saida/:quantidade", async (request, response) => {
     }
 });
 
+// Rotas de Venda
+// GET /venda
+server.get('/venda', rolesMiddleware([1]), async (request, response) => {
+    try {
+        let resultado;
+
+        let pagina = 0;
+        if(request.query.pagina != undefined){
+            pagina = parseInt(request.query.pagina);
+        }
+
+        let inicio = '1900-01-01';
+        if(request.query.inicio != undefined){
+            inicio = request.query.inicio;
+        }
+
+        let fim = new Date().toISOString();
+        if(request.query.fim != undefined){
+            fim = request.query.fim;
+        }
+
+        if(request.query.vendedor == undefined){
+            resultado = await pool.query('SELECT * FROM venda WHERE quando >= $1 AND quando <= $2 OFFSET $3 LIMIT 5', [inicio, fim,  pagina*5]);
+        } else {
+            resultado = await pool.query('SELECT * FROM venda WHERE quando >= $1 AND quando <= $2  AND vendedor = $3 OFFSET $4 LIMIT 5', [inicio, fim, request.query.vendedor, pagina*5]);
+        }
+
+        response.status(200).json(resultado.rows);
+    } catch (error) {
+        console.log(error);
+		response.status(500).json(error.message);
+    }
+});
+
+// GET /venda/{codigo}
+server.get('/venda/:codigo', rolesMiddleware([1]), async (request, response) => {
+    try {
+        const resultado = await pool.query('SELECT * FROM venda WHERE codigo = $1', [request.params.codigo]);
+        if(resultado.rows.length == 0){
+            response.status(404).json();
+            return;
+        }
+        response.status(200).json(resultado.rows[0]);
+    } catch (error) {
+        console.log(error.stack);
+		response.status(500).json(error.message);
+    }
+});
+
+// POST /venda
+server.post('/venda', async (request, response) => {
+    const vendedor = request.jwtpayload.sub;
+    const { produto, quantidade } = request.body;
+    const authorization = request.headers.authorization;
+    const urlBase = `http://localhost:${process.env.EXPRESS_PORT}`;
+
+    try {
+        // Baixa o Estoque pela rota Saída
+        const fetch_response = await fetch(`${urlBase}/produto/${produto}/saida/${quantidade}`, {
+            method: 'PUT',
+            headers: {
+                'Accept': 'application/json',
+                'Authorization': authorization
+            },
+        });
+
+        if(!fetch_response.ok){
+            // Repassa o Status e a Mensagem da rota de Saída (404, 409, ...)
+            const corpo = await fetch_response.json().catch(() => ({ erro: "Falha ao baixar o estoque" }));
+            return response.status(fetch_response.status).json(corpo);
+        }
+
+        try {
+            const resultado2 = await pool.query(
+                `
+                INSERT INTO venda (vendedor, produto, quando, quantidade)
+                VALUES ($1, $2, current_timestamp, $3)
+                RETURNING codigo, vendedor, produto, quando, quantidade
+                `,
+                [vendedor, produto, quantidade]
+            );
+            return response.status(201).json(resultado2.rows[0]);
+        } catch (error) {
+            // Baixa Foi Realizada
+            // Então, apenas devolvemos o estoque pela rota de entrada
+            const devolucao = await fetch(`${urlBase}/produto/${produto}/entrada/${quantidade}`, {
+                method: 'PUT',
+                headers: {
+                    'Accept': 'application/json',
+                    'Authorization': authorization
+                },
+            }).catch(() => null);
+
+            // Se Nem a devolução funcionar
+            // O estoque ficará inconsistente -> Só dá para registrar no Log
+            if(!devolucao || !devolucao.ok){
+                console.error(`Falha ao Devolver o estoque do Produto ${produto}`);
+            }
+            // Relança o Erro
+            throw error;
+        }
+    } catch (error) {
+        console.error(error);
+        return response.status(500).json({ erro: "Erro Interno do Servidor "});
+    }
+});
+
+// DELETE /venda/{codigo}
+server.delete('/venda/:codigo', rolesMiddleware([1]), async (request, response) => {
+    try {
+        const resultado = await pool.query(
+            'DELETE FROM venda WHERE codigo = $1 RETURNING *', [request.params.codigo]
+        );
+        if(resultado.rows.length == 0){
+            return response.status(404).json({ erro: "Venda não encontrada para remover "});
+        }
+
+        console.log("DELETE REALIZADO");
+        console.log(resultado.rows[0]);
+        response.status(204).json(resultado.rows[0]);
+    } catch (error) {
+        console.error(error);
+        return response.status(500).json({ erro: "Erro Interno do Servidor "});
+    }
+});
+
+// PUT /venda/{codigo}/extorno
+server.put('/venda/:codigo/extorno', rolesMiddleware([1]), async (request, response) => {
+    try {
+        
+    } catch (error) {
+        
+    }
+});
+
 // Teste de backend
 server.get('/teste', (request, response) => {
     response.status(200).json("Hello World");
