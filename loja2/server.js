@@ -428,10 +428,92 @@ server.delete('/venda/:codigo', rolesMiddleware([1]), async (request, response) 
 
 // PUT /venda/{codigo}/extorno
 server.put('/venda/:codigo/extorno', rolesMiddleware([1]), async (request, response) => {
+    let connection;
+    let transactionStarted = false;
+
     try {
-        
+        // Recupera e valida o Código da Venda
+        const codigo = Number(request.params.codigo);
+
+        if(!Number.isInteger(codigo) || codigo < 0){
+            response.status(400).json('Código de Venda Inválido');
+            return;
+        }
+
+        // Iniciando a Conexão com o Banco
+        connection = await pool.connect();
+    
+        await connection.query('BEGIN');
+        transactionStarted = true;
+
+        // Consulta e Bloqueia a Venda em questão
+        const resultado1 = await connection.query(
+            `
+            SELECT codigo, vendedor, produto, quando, quantidade, estornada
+            FROM venda
+            WHERE codigo = $1
+            FOR UPDATE
+            `, 
+            [codigo]
+        );
+
+        // Valida a Existência da Venda
+        if(resultado1.rows.length == 0){
+            const error = new Error('Venda não Encontrada');
+            error.status = 404;
+            throw error;
+        }
+
+        const venda = resultado1.rows[0];
+
+        // Verificando se a Venda já foi extornada
+        if(venda.estornada){
+            const error = new Error('Venda Já foi Extornada');
+            error.status = 409;
+            throw error;
+        }
+
+        // Devolvendo a Quantidade Vendida ao Estoque
+        const resultado2 = await connection.query(
+            `
+            UPDATE produto
+            SET quantidade = quantidade + $1
+            WHERE codigo = $2
+            RETURNING codigo
+            `, 
+            [venda.quantidade, venda.produto]
+        );
+
+        // Marcando a venda como estornada
+        const resultado3 = await connection.query(
+            `
+            UPDATE venda
+            SET estornada = TRUE
+            WHERE codigo = $1
+            RETURNING *
+            `, 
+            [codigo]
+        );
+
+        await connection.query('COMMIT');
+        transactionStarted = false;
+        response.status(200).json(resultado3.rows[0]);
     } catch (error) {
-        
+        // Desfaz as operações caso ocorra algum problema
+        if(connection && transactionStarted){
+            try {
+                await connection.query('ROLLBACK');
+            } catch (rollbackError) {
+                console.log(rollbackError.stack);
+            }
+        }
+        console.log(error.stack);
+        response.status(error.status || 500).json(error.message);
+    } finally {
+        // Libera a Conexão
+        if(connection){
+            connection.release();
+        }
     }
 });
 
